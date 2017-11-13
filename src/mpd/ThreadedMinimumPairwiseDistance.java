@@ -10,10 +10,10 @@ public class ThreadedMinimumPairwiseDistance implements MinimumPairwiseDistance 
         int outLoopInt = 0;
         int outLoopEndInt = 0;
         int inLoopInt = 0;
-        threads[0] = new Thread(new MPDThread(values, 0, 0, values.length/2, values.length/2, false));
-        threads[1] = new Thread(new MPDThread(values, values.length/2, 0, values.length/2, values.length, false));
-        threads[2] = new Thread(new MPDThread(values,values.length/2,values.length/2, values.length, values.length, false));
-        threads[3] = new Thread(new MPDThread(values, values.length/2, values.length/2, values.length, values.length/2, true));
+        threads[0] = new Thread(new MPDThread(values, "LL"));
+        threads[1] = new Thread(new MPDThread(values, "BR"));
+        threads[2] = new Thread(new MPDThread(values,"TR"));
+        threads[3] = new Thread(new MPDThread(values,  "C"));
 
         try {
 
@@ -35,39 +35,39 @@ public class ThreadedMinimumPairwiseDistance implements MinimumPairwiseDistance 
 
     private class MPDThread extends Thread{
         private int[] values;
-        private int outerLoopInt = 0;
-        private int innerLoopInt = 0;
-        private int outerLoopEndInt = 0;
-        private int innerLoopEndInt = 0;
-        private boolean isFourth = false;
-        private MPDThread(int [] values, int outerLoopInt, int innerLoopInt, int innerLoopEndInt, int outerLoopEndInt, boolean isFourth){
+        private String squareLocation;
+        private MPDThread(int [] values, String squareLocation){
             this.values = values;
-            this.outerLoopInt = outerLoopInt;
-            this.innerLoopInt = innerLoopInt;
-            this.outerLoopEndInt = outerLoopEndInt;
-            this.innerLoopEndInt = innerLoopEndInt;
-            this.isFourth = isFourth;
+            this.squareLocation = squareLocation;
         }
 
         private int localMin = Integer.MAX_VALUE;
         public void run() {
             //right-side up triangles
-            if(!isFourth) {
-//                for (int i = outerLoopInt; i < outerLoopEndInt; ++i) {
-//                    for (int j = innerLoopInt; j < innerLoopEndInt; ++j) {
-//                        // Gives us all the pairs (i, j) where 0 <= j < i < values.length
-//                        int diff = Math.abs(values[i] - values[j]);
-//                        if (diff < localMin) {
-//                            System.out.println(diff);
-//                            localMin = diff;
-//                        }
-//                    }
-//                }
+            if(squareLocation.equals("LL")||squareLocation.equals("BR")||squareLocation.equals("TR")) {
+                int outerStart = 0;
+                int outerEnd = 0;
+                int innerBound = 0;
+                if(squareLocation.equals("LL")){
+                    outerStart = 0;
+                    outerEnd = values.length/2;
+                    innerBound = 1;
+                }
+                if(squareLocation.equals("BR")){
+                    outerStart = values.length/2;
+                    outerEnd = values.length;
+                    innerBound = values.length/2;
+                }
+                if(squareLocation.equals("TR")){
+                    outerStart = values.length/2;
+                    outerEnd = values.length;
+                    innerBound = 1;
+                }
 
-                for (int i = outerLoopInt; i < outerLoopEndInt; ++i) {
+                for (int i = outerStart; i < outerEnd; ++i) {
                     //for (int j = innerLoopInt; j < innerLoopEndInt; ++j) {
-                    int upperBound = i;
-                    while(upperBound !=0){
+                    int upperBound = i - innerBound;
+                    while(upperBound >= 0){
                         // Gives us all the pairs (i, j) where 0 <= j < i < values.length
                         int diff = Math.abs(values[i] - values[upperBound]);
                         if (diff < localMin) {
@@ -78,16 +78,20 @@ public class ThreadedMinimumPairwiseDistance implements MinimumPairwiseDistance 
                     }
                 }
 
-                //upside-down triangles
+
             } else {
-                for (int i = outerLoopInt; i <= outerLoopEndInt; ++i) {
-                    for (int j = innerLoopInt; j < innerLoopEndInt; ++j) {
+
+                for (int j = 0; j < values.length/2; ++j) {
+                    int lowerBound = values.length/2;
+                    //outerloop must initiate at n/2, and end at n
+                    while((j + values.length/2) >= lowerBound){
                         // Gives us all the pairs (i, j) where 0 <= j < i < values.length
-                        int diff = Math.abs(values[i] - values[j]);
+                        int diff = Math.abs(values[lowerBound] - values[j]);
                         if (diff < localMin) {
                             System.out.println(diff);
                             localMin = diff;
                         }
+                        lowerBound++;
                     }
                 }
             }
