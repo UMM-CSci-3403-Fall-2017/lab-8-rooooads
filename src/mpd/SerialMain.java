@@ -5,7 +5,8 @@ import java.util.Random;
 public class SerialMain {
 
     public static void main(String[] args) {
-        int NUM_VALUES = Integer.parseInt(args[0]);
+        //int NUM_VALUES = Integer.parseInt(args[0]);
+        int NUM_VALUES = 100;
         MinimumPairwiseDistance mpd = new SerialMinimumPairwiseDistance();
 
         Random random = new Random();
