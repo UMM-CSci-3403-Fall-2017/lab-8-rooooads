@@ -6,19 +6,14 @@ public class ThreadedMinimumPairwiseDistance implements MinimumPairwiseDistance 
 
     @Override
     public int minimumPairwiseDistance(int[] values) throws UnsupportedOperationException{
+        //Creating 4 separate thread objects for each "triangle in the efficiency diagram.
         Thread[] threads = new Thread[4];
-        int outLoopInt = 0;
-        int outLoopEndInt = 0;
-        int inLoopInt = 0;
         Answer answer1 = new Answer();
-        Answer answer2 = new Answer();
-        Answer answer3 = new Answer();
-        Answer answer4 = new Answer();
         threads[0] = new Thread(new MPDThread(values, "LL", answer1));
-        threads[1] = new Thread(new MPDThread(values, "BR", answer2));
-        threads[2] = new Thread(new MPDThread(values,"TR", answer3));
-        threads[3] = new Thread(new MPDThread(values,  "C", answer4));
-
+        threads[1] = new Thread(new MPDThread(values, "BR", answer1));
+        threads[2] = new Thread(new MPDThread(values,"TR", answer1));
+        threads[3] = new Thread(new MPDThread(values,  "C", answer1));
+        //start and join threads
         try {
 
             for (int i = 0; i < threads.length; i++) {
@@ -32,14 +27,18 @@ public class ThreadedMinimumPairwiseDistance implements MinimumPairwiseDistance 
         catch(InterruptedException e){
             e.printStackTrace();
         }
-
-        return Math.min(Math.min(answer1.getMin(),answer2.getMin()),Math.min(answer3.getMin(),answer4.getMin()));
+        //return the answer objects lowest found value across all threads.
+        return answer1.getMin();
 
     }
-
+    // define the MPDThread class which contains the run() method for the threads.
     private class MPDThread extends Thread{
         Answer sharedAnswer = new Answer();
-
+        //initialize the arguments for the thread class.
+            //values is the array that is passed in for every thread.
+            //squareLocation is a string that represents which area of the inner and outer loops
+            //> will cover for the given thread.
+            //sharedAnswer is the class that stores the smallest found distance in the array between given numbers.
         private int[] values;
         private String squareLocation;
         private MPDThread(int [] values, String squareLocation, Answer anAnswer){
@@ -47,14 +46,14 @@ public class ThreadedMinimumPairwiseDistance implements MinimumPairwiseDistance 
             this.sharedAnswer = anAnswer;
             this.squareLocation = squareLocation;
         }
-
-        private int localMin = Integer.MAX_VALUE;
+        //the run() method will determine what this thread will do with the passed arguments.
         public void run() {
-            //right-side up triangles
+            //Create a case for all situation where the inner loop is < the outer loop.
             if(squareLocation.equals("LL")||squareLocation.equals("BR")||squareLocation.equals("TR")) {
                 int outerStart = 0;
                 int outerEnd = 0;
                 int innerBound = 0;
+                //the following if statements determine which half of the inner and outer loop each thread will run.
                 if(squareLocation.equals("LL")){
                     outerStart = 0;
                     outerEnd = values.length/2;
@@ -70,47 +69,41 @@ public class ThreadedMinimumPairwiseDistance implements MinimumPairwiseDistance 
                     outerEnd = values.length;
                     innerBound = 1;
                 }
-
+                //this set of loops is bounded by the aforementioned if statements depending on the square location.
+                //this contains the comparison with the Answer object that finds the difference between the outer loop
+                //and the current inner loop value.  This is then compared to the current smallest Answer object.  If it
+                // is indeed smaller, the Answer objects defined minimum value is updated to this new found value.
                 for (int i = outerStart; i < outerEnd; ++i) {
-                    //for (int j = innerLoopInt; j < innerLoopEndInt; ++j) {
-                    int upperBound = i - innerBound;
-                    while(upperBound >= 0){
-                        // Gives us all the pairs (i, j) where 0 <= j < i < values.length
-                        int diff = Math.abs(values[i] - values[upperBound]);
+                    for(int j = i-innerBound; j >= 0; j--){
+                        int diff = Math.abs(values[i] - values[j]);
                         if (diff < sharedAnswer.getMin()) {
                             System.out.println(diff);
                             sharedAnswer.setMinDist(diff);
                         }
-                        upperBound--;
                     }
                 }
 
-
+                //Create a case for all situation where the outer loop is < the inner loop.
             } else {
-
+                //for this situation our outer loop is doing what the inner loop in the last set of threads was doing
                 for (int j = 0; j < values.length/2; ++j) {
                     int lowerBound = values.length/2;
                     //outerloop must initiate at n/2, and end at n
-                    while((j + values.length/2) >= lowerBound){
-                        // Gives us all the pairs (i, j) where 0 <= j < i < values.length
-                        int diff = Math.abs(values[lowerBound] - values[j]);
+                    for(int i = j+values.length/2;j >= lowerBound;j++){
+                        // Gives us all the pairs (i, j) where 0 <= i <= j + n/2 < values.length
+                        int diff = Math.abs(values[i] - values[j]);
                         if (diff < sharedAnswer.getMin()) {
                             System.out.println(diff);
                             sharedAnswer.setMinDist(diff);
                         }
-                        lowerBound++;
                     }
                 }
             }
-            
-            /*if(localMin<sharedAnswer.getMin()){
-                sharedAnswer.setMinDist(localMin);
-            }*/
-
         }
-
     }
-
+    // the Answer class stores the smallest value found for distance in an array.  The privately stored integer
+    // is updated as smaller values are found using the setMinDist function.  The currently smallest found integer can
+    // be retrieved using the getMin function.
     private class Answer {
         private int minDist = Integer.MAX_VALUE;
 
