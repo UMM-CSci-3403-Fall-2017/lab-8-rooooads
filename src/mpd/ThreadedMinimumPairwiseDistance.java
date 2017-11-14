@@ -10,10 +10,14 @@ public class ThreadedMinimumPairwiseDistance implements MinimumPairwiseDistance 
         int outLoopInt = 0;
         int outLoopEndInt = 0;
         int inLoopInt = 0;
-        threads[0] = new Thread(new MPDThread(values, "LL"));
-        threads[1] = new Thread(new MPDThread(values, "BR"));
-        threads[2] = new Thread(new MPDThread(values,"TR"));
-        threads[3] = new Thread(new MPDThread(values,  "C"));
+        Answer answer1 = new Answer();
+        Answer answer2 = new Answer();
+        Answer answer3 = new Answer();
+        Answer answer4 = new Answer();
+        threads[0] = new Thread(new MPDThread(values, "LL", answer1));
+        threads[1] = new Thread(new MPDThread(values, "BR", answer2));
+        threads[2] = new Thread(new MPDThread(values,"TR", answer3));
+        threads[3] = new Thread(new MPDThread(values,  "C", answer4));
 
         try {
 
@@ -29,15 +33,18 @@ public class ThreadedMinimumPairwiseDistance implements MinimumPairwiseDistance 
             e.printStackTrace();
         }
 
-        return globMin;
+        return Math.min(Math.min(answer1.getMin(),answer2.getMin()),Math.min(answer3.getMin(),answer4.getMin()));
 
     }
 
     private class MPDThread extends Thread{
+        Answer sharedAnswer = new Answer();
+
         private int[] values;
         private String squareLocation;
-        private MPDThread(int [] values, String squareLocation){
+        private MPDThread(int [] values, String squareLocation, Answer anAnswer){
             this.values = values;
+            this.sharedAnswer = anAnswer;
             this.squareLocation = squareLocation;
         }
 
@@ -70,9 +77,9 @@ public class ThreadedMinimumPairwiseDistance implements MinimumPairwiseDistance 
                     while(upperBound >= 0){
                         // Gives us all the pairs (i, j) where 0 <= j < i < values.length
                         int diff = Math.abs(values[i] - values[upperBound]);
-                        if (diff < localMin) {
+                        if (diff < sharedAnswer.getMin()) {
                             System.out.println(diff);
-                            localMin = diff;
+                            sharedAnswer.setMinDist(diff);
                         }
                         upperBound--;
                     }
@@ -87,20 +94,34 @@ public class ThreadedMinimumPairwiseDistance implements MinimumPairwiseDistance 
                     while((j + values.length/2) >= lowerBound){
                         // Gives us all the pairs (i, j) where 0 <= j < i < values.length
                         int diff = Math.abs(values[lowerBound] - values[j]);
-                        if (diff < localMin) {
+                        if (diff < sharedAnswer.getMin()) {
                             System.out.println(diff);
-                            localMin = diff;
+                            sharedAnswer.setMinDist(diff);
                         }
                         lowerBound++;
                     }
                 }
             }
             
-            if(localMin<globMin && localMin !=0){
-                globMin = localMin;
-            }
+            /*if(localMin<sharedAnswer.getMin()){
+                sharedAnswer.setMinDist(localMin);
+            }*/
 
         }
+
     }
+
+    private class Answer {
+        private int minDist = Integer.MAX_VALUE;
+
+        public int getMin(){
+            return this.minDist;
+        }
+        public synchronized void setMinDist(int newMin){
+            this.minDist = newMin;
+        }
+
+    }
+
 
 }
